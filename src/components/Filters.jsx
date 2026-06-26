@@ -31,13 +31,13 @@ export default function Filters() {
         )}
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {/* Search */}
-        <div className="lg:col-span-2 relative">
+        <div className="md:col-span-2 relative">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
-            placeholder="Поиск по точке..."
+            placeholder="Поиск по торговой точке..."
             value={filters.search}
             onChange={e => setFilter('search', e.target.value)}
             className="w-full pl-8 pr-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-teal-400 transition-colors"
@@ -52,14 +52,6 @@ export default function Filters() {
           options={meta.allBres}
         />
 
-        {/* Region */}
-        <FilterSelect
-          value={filters.region}
-          onChange={v => setFilter('region', v)}
-          placeholder="Регион"
-          options={meta.allRegions}
-        />
-
         {/* City */}
         <FilterSelect
           value={filters.city}
@@ -69,31 +61,22 @@ export default function Filters() {
         />
 
         {/* SKU search */}
-        <div className="relative">
+        <div className="md:col-span-2 relative">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
-            placeholder="SKU..."
+            placeholder="Поиск по SKU..."
             value={filters.sku}
             onChange={e => setFilter('sku', e.target.value)}
             className="w-full pl-8 pr-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-teal-400 transition-colors"
           />
         </div>
-
-        {/* Status */}
-        <FilterSelect
-          value={filters.status}
-          onChange={v => setFilter('status', v)}
-          placeholder="Статус"
-          options={['problem', 'critical', 'low']}
-          labels={{ problem: 'Есть проблемы', critical: '🔴 Критично', low: '🟠 Низкий запас' }}
-        />
       </div>
     </div>
   );
 }
 
-function FilterSelect({ value, onChange, placeholder, options, labels = {} }) {
+function FilterSelect({ value, onChange, placeholder, options }) {
   return (
     <select
       value={value}
@@ -102,7 +85,7 @@ function FilterSelect({ value, onChange, placeholder, options, labels = {} }) {
     >
       <option value="">{placeholder}</option>
       {options.map(opt => (
-        <option key={opt} value={opt}>{labels[opt] || opt}</option>
+        <option key={opt} value={opt}>{opt}</option>
       ))}
     </select>
   );
