@@ -8,7 +8,14 @@
  *
  * Then add the result as a GitHub secret: VITE_SETTINGS_PWD_HASH
  */
-const CORRECT_HASH = import.meta.env.VITE_SETTINGS_PWD_HASH || '';
+// SHA-256 hash of the settings password. Compiled into the bundle — it cannot
+// be changed from the browser, only by committing a new hash here (or by
+// overriding with the VITE_SETTINGS_PWD_HASH build secret).
+// To change the password, generate a new hash in the browser console:
+//   const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('NEW_PWD'));
+//   console.log([...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join(''));
+const DEFAULT_HASH = '8907c40ceacff0845c654ec6c2216612c6ebb8240d27330bbc3fbf89110ff221';
+const CORRECT_HASH = import.meta.env.VITE_SETTINGS_PWD_HASH || DEFAULT_HASH;
 const SESSION_KEY = 'iqos_settings_authed';
 
 async function sha256(text) {
