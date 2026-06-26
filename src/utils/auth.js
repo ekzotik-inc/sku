@@ -1,30 +1,31 @@
-const HASH_KEY = 'iqos_settings_hash';
+/**
+ * Password is set via VITE_SETTINGS_PWD_HASH env variable at build time.
+ * The value must be a SHA-256 hex hash of the chosen password.
+ *
+ * To generate the hash, open browser console and run:
+ *   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('YOUR_PASSWORD'));
+ *   console.log(Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join(''));
+ *
+ * Then add the result as a GitHub secret: VITE_SETTINGS_PWD_HASH
+ */
+const CORRECT_HASH = import.meta.env.VITE_SETTINGS_PWD_HASH || '';
 const SESSION_KEY = 'iqos_settings_authed';
 
-/** SHA-256 hash via Web Crypto API */
 async function sha256(text) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-/** Returns true if a password has been set */
+/** True if password protection is configured (hash is set at build time) */
 export function hasPassword() {
-  return !!localStorage.getItem(HASH_KEY);
+  return CORRECT_HASH.length === 64; // valid SHA-256 hex is 64 chars
 }
 
-/** Set a new password (replaces existing) */
-export async function setPassword(password) {
-  const hash = await sha256(password);
-  localStorage.setItem(HASH_KEY, hash);
-  sessionStorage.setItem(SESSION_KEY, '1');
-}
-
-/** Verify password — returns true/false */
+/** Verify entered password against the compiled-in hash */
 export async function verifyPassword(password) {
-  const stored = localStorage.getItem(HASH_KEY);
-  if (!stored) return true; // no password set → open
+  if (!hasPassword()) return true; // no hash configured → open
   const hash = await sha256(password);
-  const ok = hash === stored;
+  const ok = hash === CORRECT_HASH;
   if (ok) sessionStorage.setItem(SESSION_KEY, '1');
   return ok;
 }
@@ -35,13 +36,7 @@ export function isAuthed() {
   return sessionStorage.getItem(SESSION_KEY) === '1';
 }
 
-/** Clear session auth (lock) */
+/** Lock: clear session auth */
 export function lockSettings() {
-  sessionStorage.removeItem(SESSION_KEY);
-}
-
-/** Remove password entirely */
-export function removePassword() {
-  localStorage.removeItem(HASH_KEY);
   sessionStorage.removeItem(SESSION_KEY);
 }
