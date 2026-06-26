@@ -4,6 +4,7 @@ import FileUpload from './components/FileUpload';
 import Dashboard from './components/Dashboard';
 import AnalysisPage from './components/AnalysisPage';
 import SettingsPage from './components/SettingsPage';
+import SettingsLock from './components/SettingsLock';
 import StoreModal from './components/StoreModal';
 import Toast from './components/Toast';
 
@@ -14,7 +15,11 @@ export default function App() {
     <div className="min-h-screen bg-[#F7F9FC]">
       <Header />
       <main>
-        {activeTab === 'settings' && <SettingsPage />}
+        {activeTab === 'settings' && (
+          <SettingsLock>
+            <SettingsPage />
+          </SettingsLock>
+        )}
         {activeTab === 'dashboard' && (report ? <Dashboard /> : <FileUpload />)}
         {activeTab === 'analysis' && (report ? <AnalysisPage /> : <FileUpload />)}
       </main>
