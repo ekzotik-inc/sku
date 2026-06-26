@@ -3,7 +3,8 @@ import { useAppStore } from '../store/appStore';
 import { parseExcelFile } from '../utils/excelParser';
 import { analyzeData } from '../utils/analyzer';
 import { generateSampleExcel } from '../utils/sampleData';
-import { Upload, FileSpreadsheet, Zap, Shield, BarChart3, FlaskConical } from 'lucide-react';
+import { downloadDataTemplate } from '../utils/templateUtils';
+import { Upload, FileSpreadsheet, Zap, Shield, BarChart3, FlaskConical, Download } from 'lucide-react';
 
 const features = [
   { icon: Zap, title: 'Мгновенный анализ', desc: 'Обработка файлов до 30 000 строк за секунды' },
@@ -50,16 +51,16 @@ export default function FileUpload() {
     }
   }, [minimums, setLoading, setRawData, setReport, setActiveTab, addToast]);
 
-  const handleFile = (e) => processFile(e.target.files[0]);
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setIsDragging(false);
-    processFile(e.dataTransfer.files[0]);
-  };
-
+  const handleFile = (e) => { processFile(e.target.files[0]); e.target.value = ''; };
+  const handleDrop = (e) => { e.preventDefault(); setIsDragging(false); processFile(e.dataTransfer.files[0]); };
   const handleDragOver = (e) => { e.preventDefault(); setIsDragging(true); };
   const handleDragLeave = () => setIsDragging(false);
+
+  const handleDownloadTemplate = (e) => {
+    e.stopPropagation();
+    downloadDataTemplate();
+    addToast('Шаблон скачан — заполни и загрузи обратно', 'info');
+  };
 
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-6 py-12">
@@ -93,21 +94,56 @@ export default function FileUpload() {
           `}
           style={{ animationFillMode: 'forwards' }}
         >
-          <input
-            ref={inputRef}
-            type="file"
-            accept=".xlsx,.xls,.csv"
-            onChange={handleFile}
-            className="hidden"
-          />
-
+          <input ref={inputRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleFile} className="hidden" />
           <div className="p-12 text-center">
-            {isLoading ? (
-              <LoadingState progress={loadingProgress} message={loadingMessage} />
-            ) : (
-              <IdleState isDragging={isDragging} />
-            )}
+            {isLoading
+              ? <LoadingState progress={loadingProgress} message={loadingMessage} />
+              : <IdleState isDragging={isDragging} />
+            }
           </div>
+        </div>
+
+        {/* Template columns hint */}
+        <div
+          className="animate-fade-in-up mt-4 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl"
+          style={{ animationDelay: '0.25s', animationFillMode: 'forwards', opacity: 0 }}
+        >
+          <p className="text-xs text-slate-500 font-medium mb-1.5">Ожидаемые колонки в файле:</p>
+          <div className="flex flex-wrap gap-1.5">
+            {['BRE', 'Город', 'Торговая точка', 'SKU', 'Остаток'].map((col, i) => (
+              <span key={col} className={`text-xs px-2.5 py-1 rounded-lg font-semibold border ${
+                i < 2 ? 'bg-teal-50 text-teal-700 border-teal-200'
+                : i === 4 ? 'bg-amber-50 text-amber-700 border-amber-200'
+                : 'bg-slate-100 text-slate-600 border-slate-200'
+              }`}>
+                {col}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Action buttons */}
+        <div
+          className="animate-fade-in-up flex items-center justify-center gap-3 mt-4 flex-wrap"
+          style={{ animationDelay: '0.35s', animationFillMode: 'forwards', opacity: 0 }}
+        >
+          <button
+            onClick={handleDownloadTemplate}
+            disabled={isLoading}
+            className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-teal-700 border border-slate-200 hover:border-teal-300 bg-white hover:bg-teal-50 px-4 py-2 rounded-xl transition-all duration-200 disabled:opacity-50"
+          >
+            <Download size={14} />
+            Скачать шаблон Excel
+          </button>
+
+          <button
+            onClick={(e) => { e.stopPropagation(); processFile(generateSampleExcel()); }}
+            disabled={isLoading}
+            className="flex items-center gap-2 text-sm font-medium text-teal-600 hover:text-teal-700 border border-teal-200 hover:border-teal-300 bg-teal-50 hover:bg-teal-100 px-4 py-2 rounded-xl transition-all duration-200 disabled:opacity-50"
+          >
+            <FlaskConical size={14} />
+            Загрузить демо-данные
+          </button>
         </div>
 
         {/* Features */}
@@ -117,8 +153,8 @@ export default function FileUpload() {
             return (
               <div
                 key={f.title}
-                className={`animate-fade-in-up bg-white rounded-xl p-4 border border-slate-100 shadow-sm`}
-                style={{ animationDelay: `${0.3 + i * 0.1}s`, animationFillMode: 'forwards', opacity: 0 }}
+                className="animate-fade-in-up bg-white rounded-xl p-4 border border-slate-100 shadow-sm"
+                style={{ animationDelay: `${0.45 + i * 0.1}s`, animationFillMode: 'forwards', opacity: 0 }}
               >
                 <Icon size={18} className="text-teal-500 mb-2" />
                 <div className="text-sm font-semibold text-slate-800 mb-1">{f.title}</div>
@@ -126,22 +162,6 @@ export default function FileUpload() {
               </div>
             );
           })}
-        </div>
-
-        {/* Sample data hint */}
-        <div className="flex flex-col items-center gap-2 mt-6">
-          <p className="text-center text-xs text-slate-400 animate-fade-in-up stagger-6" style={{ animationFillMode: 'forwards' }}>
-            Ожидаемые колонки: BRE, SE, Торговая точка, Регион, Город, SKU, Остаток
-          </p>
-          <button
-            onClick={() => processFile(generateSampleExcel())}
-            disabled={isLoading}
-            className="animate-fade-in-up stagger-7 flex items-center gap-2 text-xs text-teal-600 hover:text-teal-700 font-medium border border-teal-200 hover:border-teal-300 bg-teal-50 hover:bg-teal-100 px-4 py-2 rounded-xl transition-all duration-200 disabled:opacity-50"
-            style={{ animationFillMode: 'forwards' }}
-          >
-            <FlaskConical size={13} />
-            Загрузить демо-данные
-          </button>
         </div>
       </div>
     </div>
@@ -182,15 +202,10 @@ function LoadingState({ progress, message }) {
       <h3 className="text-base font-semibold text-slate-800 mb-1">{message}</h3>
       <p className="text-sm text-slate-500 mb-6">{progress}%</p>
       <div className="w-full max-w-xs mx-auto bg-slate-100 rounded-full h-1.5 overflow-hidden">
-        <div
-          className="h-full iqos-gradient rounded-full transition-all duration-300"
-          style={{ width: `${progress}%` }}
-        />
+        <div className="h-full iqos-gradient rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
       </div>
     </div>
   );
 }
 
-function delay(ms) {
-  return new Promise(r => setTimeout(r, ms));
-}
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
